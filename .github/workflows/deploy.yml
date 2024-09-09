@@ -1,0 +1,36 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy Medusa Backend to ECS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and Push Docker Image to ECR
+        run: |
+          REPOSITORY_URI=your-ecr-repository-url
+          docker build -t medusa-backend .
+          docker tag medusa-backend:latest $REPOSITORY_URI:latest
+          docker push $REPOSITORY_URI:latest
+
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service \
+            --cluster medusa-cluster \
+            --service medusa-service \
+            --force-new-deployment
